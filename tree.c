@@ -13,7 +13,7 @@
 
 static char *dir = NULL;
 static int max_depth = 2;
-static char *help = "usage: ctree [path] [arguemnts]\n\t-h | --help \t prints this text\n\t-d | --depth \t <int>\n";
+static char *help = "usage: ctree [path] [options...]\n\t-h | --help \t prints this text\n\t-d | --depth \t <int>\n";
 
 static char *p1 = "    "; //L"    ";
 static char *p2 = "|   "; //L"│   ";
@@ -172,10 +172,6 @@ int main(int argc, char *argv[]) {
 		} else if (strcmp(arg, "-d") == 0 || strcmp(arg, "--depth") == 0) {
 			if (i + 1 < argc) {
 				max_depth = atoi(argv[i+1]);
-				if (max_depth == 0) {
-					fprintf(stderr, "should not be 0 or NaN: '%s'\n", argv[i+1]);
-					return EXIT_FAILURE;
-				}
 				i += 1;
 			} else {
 				fprintf(stderr, "%s", help);
@@ -183,7 +179,7 @@ int main(int argc, char *argv[]) {
 			}
 		} else {
 			if (arg[0] == '-' || dir != NULL) {
-				fprintf(stderr, "unknown argument: '%s'\n", arg);
+				fprintf(stderr, "unknown option: '%s'\n", arg);
 				return EXIT_FAILURE;
 			} else {
 				dir = arg;

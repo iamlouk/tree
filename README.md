@@ -10,4 +10,27 @@ make
 make install
 ```
 
+Example:
+```
+.
+|
++---+- .git/
+|   +----- COMMIT_EDITMSG
+|   +----- config
+|   +----- description
+|   +----- HEAD
+|   +----- hooks/
+|   +----- index
+|   +----- info/
+|   +----- logs/
+|   +----- objects/
+|   `----- refs/
++----- .gitignore
++----- colors.h
++----- LICENSE.txt
++----- Makefile
++----- README.md
+`----- tree.c
+```
+
 
