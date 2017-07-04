@@ -1,4 +1,5 @@
 
 tree
 *.DS_Store
+*.o
 
