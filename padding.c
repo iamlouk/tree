@@ -5,28 +5,27 @@
 
 struct padding {
 	int depth;
-	char **componets;
+	int max_depth;
+	char *componets[];
 };
 
-padding* pad_create(void) {
-	padding* pad = malloc(sizeof(padding));
+padding* pad_create(int max_depth) {
+	padding* pad = malloc(sizeof(padding) + (max_depth + 1) * sizeof(char*));
 	if (pad == NULL) {
 		perror("malloc pad failed");
 		exit(EXIT_FAILURE);
 	}
 	pad->depth = 0;
-	pad->componets = NULL;
+	pad->max_depth = max_depth;
 	return pad;
 }
 
 void pad_add(padding* pad, char* str) {
-	pad->depth += 1;
-	pad->componets = realloc(pad->componets, pad->depth * sizeof(char*));
-	if (pad->componets == NULL) {
-		perror("realloc pad->componets failed");
+	if (pad->depth >= pad->max_depth) {
 		exit(EXIT_FAILURE);
 	}
-	pad->componets[pad->depth - 1] = str;
+	pad->componets[pad->depth] = str;
+	pad->depth += 1;
 }
 
 void pad_pop(padding* pad) {

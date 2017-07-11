@@ -20,7 +20,7 @@ static char* padding_6 = "`---+- "; //L"└───┬─ ";
 
 typedef struct padding padding;
 
-padding* pad_create(void);
+padding* pad_create(int max_depth);
 void pad_add(padding*, char*);
 void pad_pop(padding*);
 void pad_print(padding*);

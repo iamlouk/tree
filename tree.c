@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>
@@ -13,20 +14,6 @@
 #include "padding.h"
 
 static int max_depth = 2;
-
-static char* join_path(char* a, ssize_t alen, char* b, ssize_t blen) {
-	ssize_t len = alen + 1 + blen;
-	char* buf = malloc(sizeof(char) * (len + 1));
-	if (buf == NULL) {
-		perror("malloc failed");
-		exit(EXIT_FAILURE);
-	}
-	strcpy(buf, a);
-	buf[alen] = '/';
-	strcpy(buf + alen + 1, b);
-	buf[len] = '\0';
-	return buf;
-}
 
 static struct dirent *filelist(char* dir, int *filec) {
 	DIR *dirp = opendir(dir);
@@ -40,7 +27,12 @@ static struct dirent *filelist(char* dir, int *filec) {
 	}
 
 	int count = 0;
-	while (true) {
+	struct dirent* entry;
+	while (errno = 0, (entry = readdir(dirp)) != NULL) {
+		if (entry->d_name[0] == '.' && (entry->d_name[1] == '\0' ||
+			(entry->d_name[1] == '.' && entry->d_name[2] == '\0')))
+			continue;
+
 		if (count >= entrys_size) {
 			entrys_size += 10;
 			entrys = realloc(entrys, sizeof(struct dirent) * entrys_size);
@@ -50,21 +42,14 @@ static struct dirent *filelist(char* dir, int *filec) {
 			}
 		}
 
-		struct dirent *e = entrys + count;
-		struct dirent *result = NULL;
-		if (readdir_r(dirp, e, &result) != 0) {
-			perror("readdir_r failed");
-			exit(EXIT_FAILURE);
-		}
-
-		if (result == NULL)
-			break;
-
-		if (result->d_name[0] == '.' && (result->d_name[1] == '\0' ||
-			(result->d_name[1] == '.' && result->d_name[2] == '\0')))
-			continue;
-
+		struct dirent* dest = &(entrys[count]); // entrys + count
+		memcpy(dest, entry, sizeof(struct dirent));
+		
 		count += 1;
+	}
+	if (errno != 0) {
+		perror("readdir");
+		exit(EXIT_FAILURE);
 	}
 
 	*filec = count;
@@ -88,14 +73,17 @@ static void crawl(char* dir, ssize_t dirlen, padding *pad) {
 		bool isdir = (files[i].d_type & DT_DIR) == DT_DIR;
 		bool islast = i == filec - 1;
 		if (pad_getDepth(pad) < max_depth && isdir) {
-			char* path = join_path(dir, dirlen, name, files[i].d_namlen);
+			size_t pathlen = dirlen + 1 + files[i].d_namlen;
+			char path[pathlen + 1];
+			strcpy(path, dir);
+			path[dirlen] = '/';
+			strcpy(path + dirlen + 1, name);
 
 			printf("%s%s%s/\n", islast ? PAD_TYPE_6 : PAD_TYPE_5, COL_RESET, name);
 			pad_add(pad, islast ? PAD_TYPE_1 : PAD_TYPE_2);
 			crawl(path, strlen(path), pad);
 			pad_pop(pad);
 
-			free(path);
 		} else if (isdir) {
 			printf("%s%s%s/\n", islast ? PAD_TYPE_4 : PAD_TYPE_3, COL_RESET, name);
 		} else {
@@ -160,7 +148,7 @@ int main(int argc, char* argv[]) {
 
 	printf("%s\n", directory);
 
-	crawl(directory, dirlen, pad_create());
+	crawl(directory, dirlen, pad_create(max_depth));
 
 	return EXIT_SUCCESS;
 }
